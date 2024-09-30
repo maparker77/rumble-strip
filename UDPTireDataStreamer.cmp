@@ -1,0 +1,58 @@
+TYPE(ALGEBRAIC)
+NAME(UDPTireDataStreamer)
+SIDES(50,25,NONE,NONE,NONE,NONE)
+#include "socketlib.h"
+#include "string.h"
+BEGIN_DEFINITIONS
+	//SIDE 1
+	//===============================================================================
+	DEFINE_INPUTM(SimRealVar,TirePositions,"Tire Positions","m",SIDE1,LOCATION1,4,3)
+	DEFINE_INPUT(SimRealVar,UpdateRate,"Visual Update Rate","sec",SIDE1,LOCATION4)
+	DEFINE_INPUT(int,outPort,"Output Port Number","ND",SIDE1,LOCATION5)
+	DEFINE_INPUTV(char,destAddress,"IP Address of Receiving System","ND",SIDE1,LOCATION6,128)
+	
+	//Stuff in Memory
+	//===============================================================================
+	DEFINE_SMEM(sampleHandle, sample)	DEFINE_SMEM(Socket*, outputSocket)
+END_DEFINITIONS
+BEGIN_INIT
+	SMEM(sample)=RegisterSample(INPUT(UpdateRate));	SMEM(outputSocket) = SocketNew(SOCKETTYPE_UDP);
+	
+	int setRemoteRes = SocketSetRemoteInfo(SMEM(outputSocket), INPUTV(destAddress), INPUT(outPort));
+	int connectRes = SocketConnect(SMEM(outputSocket));
+	
+	printf("UDP Streamer Initialization Results:\n");
+	printf("SocketSetRemoteInfo = %d\tSocketConnect = %d\n", setRemoteRes, connectRes);
+END_INIT
+BEGIN_STOP
+END_STOP
+BEGIN_RATES
+END_RATES
+BEGIN_OUTPUTS
+	
+	if(CheckSample(SMEM(sample)) ){
+		
+		float val01 = INPUTM(TirePositions)[0][0];
+		float val02 = INPUTM(TirePositions)[0][1];
+		float val03 = INPUTM(TirePositions)[0][2];
+		float val04 = INPUTM(TirePositions)[1][0];
+		float val05 = INPUTM(TirePositions)[1][1];
+		float val06 = INPUTM(TirePositions)[1][2];
+		float val07 = INPUTM(TirePositions)[2][0];
+		float val08 = INPUTM(TirePositions)[2][1];
+		float val09 = INPUTM(TirePositions)[2][2];
+		float val10 = INPUTM(TirePositions)[3][0];
+		float val11 = INPUTM(TirePositions)[3][1];
+		float val12 = INPUTM(TirePositions)[3][2];
+		
+		//Speed is sent as m/s
+		float myData[] = {val01, val02, val03, val04, val05, val06, val07, val08, val09, val10, val11, val12}; 
+
+		int res = SocketWrite(SMEM(outputSocket), &myData, sizeof(myData));
+		
+	}
+	
+END_OUTPUTS
+
+BEGIN_STATE_OVERRIDE
+END_STATE_OVERRIDE
